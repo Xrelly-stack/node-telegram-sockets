@@ -4,6 +4,7 @@ require('array.prototype.findindex').shim(); // for Node.js v0.x
 const errors = require('./errors');
 const TelegramSocketsWebHook = require('./telegramWebHook');
 const TelegramSocketsPolling = require('./telegramPolling');
+const KeyboardBuilder = require('./keyboardBuilder');
 const debug = require('debug')('node-telegram-sockets');
 const EventEmitter = require('eventemitter3');
 const fileType = require('file-type');
@@ -199,6 +200,15 @@ class TelegramSockets extends EventEmitter {
 
     debug('Broadcast completed: %j', report);
     return report;
+  }
+
+  /**
+   * Create a new Keyboard Builder
+   * @param {String} [type='inline'] 'inline' or 'reply'
+   * @returns {KeyboardBuilder}
+   */
+  keyboard(type = 'inline') {
+    return new KeyboardBuilder(type);
   }
 
   /**

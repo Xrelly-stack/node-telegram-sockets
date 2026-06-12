@@ -80,6 +80,7 @@ bot.on("polling_error", (error) => {
 - **Auto-Retry Rate Limit**: Menangani error 429 (Too Many Requests) secara otomatis jika opsi `rateLimit: true` diaktifkan.
 - **Media Helper**: Mengirim album foto dengan mudah menggunakan `.sendAlbum(chatId, [path1, path2])`.
 - **Smart Broadcast System**: Mengirim pesan massal dengan antrean otomatis dan laporan status.
+- **Fluent Keyboard Builder**: Membuat tombol dengan gaya, emoji kustom, dan alur kerja yang lancar.
 
 ## Fitur Lanjutan
 
@@ -132,6 +133,25 @@ bot.broadcast(userIds, "Halo semuanya! Ini adalah pesan siaran.")
     console.log(`Diblokir: ${report.blocked}`);
     console.log(`Gagal: ${report.failed}`);
   });
+```
+
+### 6. Fluent Keyboard Builder
+Membuat tombol inline dengan gaya dan emoji kustom jadi lebih mudah:
+```javascript
+const keyboard = bot.keyboard('inline')
+  .url("Owner Script", "https://t.me/xrelly", { 
+    style: "danger", 
+    icon_custom_emoji_id: "6213063926200933195" 
+  })
+  .url("Channel Owner", "https://t.me/jspacker", { 
+    style: "success", 
+    icon_custom_emoji_id: "5328034993727889277" 
+  })
+  .row()
+  .callback("Bantuan", "help_data", { style: "info" })
+  .build();
+
+bot.sendMessage(chatId, "Pilih menu:", { reply_markup: keyboard });
 ```
 
 ## Kontribusi
