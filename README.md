@@ -79,6 +79,7 @@ bot.on("polling_error", (error) => {
 - **Manajemen Sesi**: Akses sesi pengguna langsung melalui `msg.session`.
 - **Auto-Retry Rate Limit**: Menangani error 429 (Too Many Requests) secara otomatis jika opsi `rateLimit: true` diaktifkan.
 - **Media Helper**: Mengirim album foto dengan mudah menggunakan `.sendAlbum(chatId, [path1, path2])`.
+- **Smart Broadcast System**: Mengirim pesan massal dengan antrean otomatis dan laporan status.
 
 ## Fitur Lanjutan
 
@@ -118,6 +119,19 @@ bot.sendAlbum(chatId, [
   './assets/photo1.jpg',
   './assets/photo2.png'
 ]);
+```
+
+### 5. Smart Broadcast System
+Kirim pesan ke banyak pengguna sekaligus dengan aman:
+```javascript
+const userIds = [123456, 789012, 345678];
+bot.broadcast(userIds, "Halo semuanya! Ini adalah pesan siaran.")
+  .then(report => {
+    console.log(`Total: ${report.total}`);
+    console.log(`Berhasil: ${report.success}`);
+    console.log(`Diblokir: ${report.blocked}`);
+    console.log(`Gagal: ${report.failed}`);
+  });
 ```
 
 ## Kontribusi

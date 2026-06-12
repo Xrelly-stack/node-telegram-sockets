@@ -162,6 +162,46 @@ class TelegramSockets extends EventEmitter {
   }
 
   /**
+   * Smart Broadcast System
+   * @param {Array<Number|String>} chatIds List of chat IDs
+   * @param {String} text Message to send
+   * @param {Object} [options]
+   * @param {Number} [options.delay=50] Delay between messages in ms
+   * @returns {Promise<Object>} Broadcast report
+   */
+  async broadcast(chatIds, text, options = {}) {
+    const delay = options.delay || 50;
+    const report = {
+      total: chatIds.length,
+      success: 0,
+      failed: 0,
+      blocked: 0,
+      errors: []
+    };
+
+    for (const chatId of chatIds) {
+      try {
+        await this.sendMessage(chatId, text, options);
+        report.success++;
+      } catch (err) {
+        if (err.response && (err.response.statusCode === 403 || err.response.statusCode === 401)) {
+          report.blocked++;
+        } else {
+          report.failed++;
+          report.errors.push({ chatId, error: err.message });
+        }
+      }
+      // Wait for the specified delay to respect rate limits
+      if (chatIds.indexOf(chatId) < chatIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    debug('Broadcast completed: %j', report);
+    return report;
+  }
+
+  /**
    * The different errors the library uses.
    * @type {Object}
    */
