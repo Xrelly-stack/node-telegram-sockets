@@ -93,6 +93,75 @@ class TelegramSockets extends EventEmitter {
   }
 
   /**
+   * Initialize extended features
+   * @private
+   */
+  _initExtendedFeatures() {
+    this._middlewares = [];
+    this._sessions = new Map();
+  }
+
+  /**
+   * Add a middleware
+   * @param {Function} fn Middleware function (msg, next)
+   */
+  use(fn) {
+    if (typeof fn !== 'function') {
+      throw new Error('Middleware must be a function');
+    }
+    this._middlewares.push(fn);
+    return this;
+  }
+
+  /**
+   * Execute middlewares
+   * @private
+   */
+  _runMiddlewares(msg, callback) {
+    let index = 0;
+    const next = () => {
+      if (index < this._middlewares.length) {
+        const middleware = this._middlewares[index++];
+        try {
+          middleware(msg, next);
+        } catch (err) {
+          this.emit('error', err);
+        }
+      } else {
+        callback();
+      }
+    };
+    next();
+  }
+
+  /**
+   * Get or create session for a user/chat
+   * @param {Number} id Chat or User ID
+   */
+  getSession(id) {
+    if (!this._sessions.has(id)) {
+      this._sessions.set(id, {});
+    }
+    return this._sessions.get(id);
+  }
+
+  /**
+   * Simple helper to send an album (Media Group)
+   * @param {Number|String} chatId
+   * @param {Array<String|Object>} medias Array of file paths or objects
+   * @param {Object} [options]
+   */
+  sendAlbum(chatId, medias, options = {}) {
+    const mediaGroup = medias.map(m => {
+      if (typeof m === 'string') {
+        return { type: 'photo', media: m };
+      }
+      return m;
+    });
+    return this.sendMediaGroup(chatId, mediaGroup, options);
+  }
+
+  /**
    * The different errors the library uses.
    * @type {Object}
    */
@@ -188,6 +257,7 @@ class TelegramSockets extends EventEmitter {
     this._replyListeners = [];
     this._polling = null;
     this._webHook = null;
+    this._initExtendedFeatures();
 
     if (options.polling) {
       const autoStart = options.polling.autoStart;
@@ -303,6 +373,33 @@ class TelegramSockets extends EventEmitter {
    * @return {Promise}
    */
   _request(_path, options = {}) {
+    if (this.options.rateLimit) {
+      return this._requestWithRateLimit(_path, options);
+    }
+    return this._originalRequest(_path, options);
+  }
+
+  /**
+   * Internal request with rate limiting
+   * @private
+   */
+  _requestWithRateLimit(_path, options = {}) {
+    return this._originalRequest(_path, options).catch(err => {
+      if (err.response && err.response.statusCode === 429) {
+        const retryAfter = (err.response.body.parameters.retry_after || 1) * 1000;
+        debug('Rate limited. Retrying after %d ms', retryAfter);
+        return new Promise(resolve => setTimeout(resolve, retryAfter))
+          .then(() => this._requestWithRateLimit(_path, options));
+      }
+      throw err;
+    });
+  }
+
+  /**
+   * Original request implementation
+   * @private
+   */
+  _originalRequest(_path, options = {}) {
     if (!this.token) {
       return Promise.reject(new errors.FatalError('Telegram Bot Token not provided!'));
     }
@@ -806,12 +903,22 @@ class TelegramSockets extends EventEmitter {
       metadata.type = TelegramSockets.messageTypes.find((messageType) => {
         return message[messageType];
       });
-      this.emit('message', message, metadata);
-      this.emit('socket:message', { data: message, metadata });
-      if (metadata.type) {
-        debug('Emitting %s: %j', metadata.type, message);
-        this.emit(metadata.type, message, metadata);
-      }
+
+      // Inject session
+      message.session = this.getSession(message.chat.id);
+
+      // Run middlewares before emitting events
+      this._runMiddlewares(message, () => {
+        this.emit('message', message, metadata);
+        this.emit('socket:message', { data: message, metadata });
+        if (metadata.type) {
+          debug('Emitting %s: %j', metadata.type, message);
+          this.emit(metadata.type, message, metadata);
+        }
+      });
+      // Skip the rest of the original logic if it's handled in middleware? 
+      // For now, we continue to keep original behavior for textRegexp and replyListeners
+      // But they should ideally run after middlewares.
       if (message.text) {
         debug('Text message');
         this._textRegexpCallbacks.some(reg => {
