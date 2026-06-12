@@ -1,5 +1,10 @@
 'use strict';
 
+/**
+ * KeyboardBuilder for Node Telegram Sockets
+ * Supports native Telegram button styles (primary, success, danger)
+ * and custom emoji icons.
+ */
 class KeyboardBuilder {
   constructor(type = 'inline') {
     this.type = type;
@@ -10,22 +15,17 @@ class KeyboardBuilder {
   /**
    * Add a button to the current row
    * @param {Object} options Button options
+   * @param {String} [options.style] Native style: 'primary', 'success', or 'danger'
+   * @param {String} [options.icon_custom_emoji_id] Custom emoji ID
    */
   button(options) {
-    let text = options.text;
+    const btn = { text: options.text };
     
-    // Apply styles by adding emojis (simulating color)
-    if (options.style === 'danger') {
-      text = '🔴 ' + text;
-    } else if (options.style === 'success') {
-      text = '🟢 ' + text;
-    } else if (options.style === 'warning') {
-      text = '🟡 ' + text;
-    } else if (options.style === 'info') {
-      text = '🔵 ' + text;
+    // Support native Telegram styles (Bot API 7.10+)
+    if (['primary', 'success', 'danger'].indexOf(options.style) !== -1) {
+      btn.style = options.style;
     }
 
-    const btn = { text };
     if (options.url) btn.url = options.url;
     if (options.callback_data) btn.callback_data = options.callback_data;
     if (options.icon_custom_emoji_id) btn.icon_custom_emoji_id = options.icon_custom_emoji_id;

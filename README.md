@@ -148,7 +148,7 @@ const keyboard = bot.keyboard('inline')
     icon_custom_emoji_id: "5328034993727889277" 
   })
   .row()
-  .callback("Bantuan", "help_data", { style: "info" })
+  .callback("Bantuan", "help_data", { style: "primary" })
   .build();
 
 bot.sendMessage(chatId, "Pilih menu:", { reply_markup: keyboard });
