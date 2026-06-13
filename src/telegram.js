@@ -4241,4 +4241,4 @@ class TelegramSockets extends EventEmitter {
 
 }
 
-module.exports = TelegramBot;
+module.exports = TelegramSockets;
