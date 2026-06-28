@@ -424,8 +424,10 @@ class TelegramSockets extends EventEmitter {
    */
   _fixRichMessage(obj) {
     if (obj.rich_message && typeof obj.rich_message !== 'string') {
-      // The rich_message parameter should be a JSON-serialized object with a "rich_message" property.
-      const payload = (obj.rich_message && obj.rich_message.rich_message) ? obj.rich_message : { rich_message: obj.rich_message };
+      // According to Telegram Bot API 10.1, rich_message parameter is an InputRichMessage object.
+      // It must be JSON-serialized when sent via form-data.
+      // If the user provided just the blocks, we wrap it in the required InputRichMessage structure.
+      const payload = obj.rich_message.blocks ? obj.rich_message : { blocks: obj.rich_message };
       obj.rich_message = stringify(payload);
     }
   }
