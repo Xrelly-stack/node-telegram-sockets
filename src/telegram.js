@@ -1254,7 +1254,10 @@ class TelegramSockets extends EventEmitter {
    */
   sendRichMessage(chatId, richMessage, form = {}) {
     form.chat_id = chatId;
-    form.rich_message = typeof richMessage === 'string' ? richMessage : JSON.stringify(richMessage);
+    // The rich_message parameter should be a JSON-serialized object with a "rich_message" property.
+    // If richMessage doesn't already have it, wrap it.
+    const payload = (richMessage && richMessage.rich_message) ? richMessage : { rich_message: richMessage };
+    form.rich_message = JSON.stringify(payload);
     return this._request('sendRichMessage', { form });
   }
 
