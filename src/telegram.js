@@ -1286,11 +1286,9 @@ class TelegramSockets extends EventEmitter {
   sendRichMessage(chatId, richMessage, form = {}) {
     form.chat_id = chatId;
     form.rich_message = richMessage;
-    // Telegram might require a non-empty text field as fallback for some clients, 
-    // or at least to satisfy the 'non-empty' requirement if rich_message parsing fails.
-    if (!form.text) {
-      form.text = ' '; // Invisible space as fallback
-    }
+    // If the user didn't provide a fallback text, we don't force one, 
+    // as it might override the rich_message in some Telegram clients.
+    // The 'non-empty' error should be solved by proper JSON serialization of rich_message.
     return this._request('sendRichMessage', { form });
   }
 
