@@ -432,9 +432,14 @@ class TelegramSockets extends EventEmitter {
       if (Array.isArray(payload)) {
         payload = { blocks: payload };
       } 
-      // If it's an object but doesn't have any of the required keys, it might be a single block.
-      else if (typeof payload === 'object' && !payload.blocks && !payload.markdown && !payload.html) {
-        payload = { blocks: [payload] };
+      // If it's an object, we check for blocks/markdown/html.
+      else if (typeof payload === 'object') {
+        // If it doesn't have any of the standard keys, wrap it as a block.
+        if (!payload.blocks && !payload.markdown && !payload.html) {
+          payload = { blocks: [payload] };
+        }
+        // If it has blocks but also markdown/html, Telegram API usually accepts them together 
+        // in InputRichMessage (blocks are prioritized or appended depending on implementation).
       }
 
       obj.rich_message = stringify(payload);
