@@ -425,9 +425,18 @@ class TelegramSockets extends EventEmitter {
   _fixRichMessage(obj) {
     if (obj.rich_message && typeof obj.rich_message !== 'string') {
       // According to Telegram Bot API 10.1, rich_message parameter is an InputRichMessage object.
-      // It must be JSON-serialized when sent via form-data.
-      // If the user provided just the blocks, we wrap it in the required InputRichMessage structure.
-      const payload = obj.rich_message.blocks ? obj.rich_message : { blocks: obj.rich_message };
+      // It can contain 'blocks' (array), 'markdown' (string), or 'html' (string).
+      let payload = obj.rich_message;
+      
+      // If the user provided an array, assume it's the blocks.
+      if (Array.isArray(payload)) {
+        payload = { blocks: payload };
+      } 
+      // If it's an object but doesn't have any of the required keys, it might be a single block.
+      else if (typeof payload === 'object' && !payload.blocks && !payload.markdown && !payload.html) {
+        payload = { blocks: [payload] };
+      }
+
       obj.rich_message = stringify(payload);
     }
   }
@@ -1272,6 +1281,11 @@ class TelegramSockets extends EventEmitter {
   sendRichMessage(chatId, richMessage, form = {}) {
     form.chat_id = chatId;
     form.rich_message = richMessage;
+    // Telegram might require a non-empty text field as fallback for some clients, 
+    // or at least to satisfy the 'non-empty' requirement if rich_message parsing fails.
+    if (!form.text) {
+      form.text = ' '; // Invisible space as fallback
+    }
     return this._request('sendRichMessage', { form });
   }
 
