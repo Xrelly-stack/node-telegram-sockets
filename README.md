@@ -154,6 +154,33 @@ const keyboard = bot.keyboard('inline')
 bot.sendMessage(chatId, "Pilih menu:", { reply_markup: keyboard });
 ```
 
+### 6. Penggunaan rich_message pada library 
+Membuat menu pada bot kalian menjadi lebih bagus dan bergaya.
+
+Mendengarkan event rich_message :
+
+```javascript
+bot.on('rich_message', (msg) => {
+    console.log('Get rich_message:', msg.rich_message);
+});
+```
+
+Cara kirim rich_message
+
+```javascript
+const richMessage = {
+    blocks: [
+        {
+            type: "heading",
+            text: "Hello world!!!",
+            size: 1
+        }
+    ]
+}
+
+bot.sendRichMessage(chatId, richMessage);
+```
+
 ## Kontribusi
 
 Kami menyambut kontribusi! Jika Anda memiliki ide untuk fitur baru, perbaikan bug, atau peningkatan, silakan buka isu atau kirim pull request di repositori GitHub.
