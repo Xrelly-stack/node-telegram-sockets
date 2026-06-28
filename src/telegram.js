@@ -417,6 +417,20 @@ class TelegramSockets extends EventEmitter {
   }
 
   /**
+   * Fix 'rich_message' parameter by making it JSON-serialized, as
+   * required by the Telegram Bot API
+   * @param {Object} obj Object; either 'form' or 'qs'
+   * @private
+   */
+  _fixRichMessage(obj) {
+    if (obj.rich_message && typeof obj.rich_message !== 'string') {
+      // The rich_message parameter should be a JSON-serialized object with a "rich_message" property.
+      const payload = (obj.rich_message && obj.rich_message.rich_message) ? obj.rich_message : { rich_message: obj.rich_message };
+      obj.rich_message = stringify(payload);
+    }
+  }
+
+  /**
    * Make request against the API
    * @param {String} _path API endpoint
    * @param {Object} [options]
@@ -464,6 +478,7 @@ class TelegramSockets extends EventEmitter {
       this._fixEntitiesField(options.form);
       this._fixReplyParameters(options.form);
       this._fixMessageIds(options.form);
+      this._fixRichMessage(options.form);
     }
     if (options.qs) {
       this._fixReplyMarkup(options.qs);
@@ -1252,14 +1267,10 @@ class TelegramSockets extends EventEmitter {
    * @return {Promise}
    * @see https://core.telegram.org/bots/api#sendmessage
    */
-  sendRichMessage(chatId, richMessage, options = {}) {
-    const payload = (richMessage && richMessage.rich_message) ? richMessage : { rich_message: richMessage };
-    const body = {
-      chat_id: chatId,
-      rich_message: payload,
-      ...options
-    };
-    return this._request('sendRichMessage', { body, json: true });
+  sendRichMessage(chatId, richMessage, form = {}) {
+    form.chat_id = chatId;
+    form.rich_message = richMessage;
+    return this._request('sendRichMessage', { form });
   }
 
   /**
