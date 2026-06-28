@@ -56,7 +56,8 @@ const _messageTypes = [
   'chat_invite_link',
   'chat_member_updated',
   'web_app_data',
-  'message_reaction'
+  'message_reaction',
+  'rich_message'
 ];
 
 const _deprecatedMessageTypes = [
@@ -1241,6 +1242,20 @@ class TelegramSockets extends EventEmitter {
     form.chat_id = chatId;
     form.text = text;
     return this._request('sendMessage', { form });
+  }
+
+  /**
+   * Send rich messages.
+   * @param {Number|String} chatId Unique identifier for the target chat or username of the target channel (in the format `@channelusername`)
+   * @param {Object} richMessage Rich message object
+   * @param {Object} [form] Additional Telegram query options
+   * @return {Promise}
+   * @see https://core.telegram.org/bots/api#sendmessage
+   */
+  sendRichMessage(chatId, richMessage, form = {}) {
+    form.chat_id = chatId;
+    form.rich_message = typeof richMessage === 'string' ? richMessage : JSON.stringify(richMessage);
+    return this._request('sendRichMessage', { form });
   }
 
   /**
